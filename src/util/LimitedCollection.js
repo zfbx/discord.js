@@ -79,7 +79,7 @@ class LimitedCollection extends Collection {
             if (sweepFn === null) return;
             if (typeof sweepFn !== 'function') throw new TypeError('SWEEP_FILTER_RETURN');
             this.sweep(sweepFn);
-          }, sweepInterval * 1_000).unref()
+          }, sweepInterval * 1_000)
         : null;
   }
 

@@ -74,7 +74,7 @@ class RequestHandler {
       setTimeout(() => {
         this.manager.globalDelay = null;
         resolve();
-      }, ms).unref();
+      }, ms);
     });
   }
 

@@ -182,7 +182,7 @@ class Client extends BaseClient {
       this.sweepMessageInterval = setInterval(
         this.sweepMessages.bind(this),
         this.options.messageSweepInterval * 1_000,
-      ).unref();
+      );
     }
   }
 

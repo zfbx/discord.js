@@ -433,7 +433,7 @@ class GuildMemberManager extends CachedManager {
         this.client.removeListener(Events.GUILD_MEMBERS_CHUNK, handler);
         this.client.decrementMaxListeners();
         reject(new Error('GUILD_MEMBERS_TIMEOUT'));
-      }, time).unref();
+      }, time);
       this.client.incrementMaxListeners();
       this.client.on(Events.GUILD_MEMBERS_CHUNK, handler);
     });

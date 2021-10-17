@@ -343,7 +343,7 @@ class WebSocketManager extends EventEmitter {
       const item = this.packetQueue.shift();
       setImmediate(() => {
         this.handlePacket(item.packet, item.shard);
-      }).unref();
+      });
     }
 
     if (packet && PacketHandlers[packet.t]) {

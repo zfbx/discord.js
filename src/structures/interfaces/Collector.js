@@ -84,8 +84,8 @@ class Collector extends EventEmitter {
     this.handleCollect = this.handleCollect.bind(this);
     this.handleDispose = this.handleDispose.bind(this);
 
-    if (options.time) this._timeout = setTimeout(() => this.stop('time'), options.time).unref();
-    if (options.idle) this._idletimeout = setTimeout(() => this.stop('idle'), options.idle).unref();
+    if (options.time) this._timeout = setTimeout(() => this.stop('time'), options.time);
+    if (options.idle) this._idletimeout = setTimeout(() => this.stop('idle'), options.idle);
   }
 
   /**
@@ -109,7 +109,7 @@ class Collector extends EventEmitter {
 
       if (this._idletimeout) {
         clearTimeout(this._idletimeout);
-        this._idletimeout = setTimeout(() => this.stop('idle'), this.options.idle).unref();
+        this._idletimeout = setTimeout(() => this.stop('idle'), this.options.idle);
       }
     }
     this.checkEnd();
@@ -211,11 +211,11 @@ class Collector extends EventEmitter {
   resetTimer({ time, idle } = {}) {
     if (this._timeout) {
       clearTimeout(this._timeout);
-      this._timeout = setTimeout(() => this.stop('time'), time ?? this.options.time).unref();
+      this._timeout = setTimeout(() => this.stop('time'), time ?? this.options.time);
     }
     if (this._idletimeout) {
       clearTimeout(this._idletimeout);
-      this._idletimeout = setTimeout(() => this.stop('idle'), idle ?? this.options.idle).unref();
+      this._idletimeout = setTimeout(() => this.stop('idle'), idle ?? this.options.idle);
     }
   }
 

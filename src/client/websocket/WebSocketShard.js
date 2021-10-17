@@ -490,7 +490,7 @@ class WebSocketShard extends EventEmitter {
         this.emit(ShardEvents.ALL_READY, this.expectedGuilds);
       },
       hasGuildsIntent ? 15_000 : 0,
-    ).unref();
+    );
   }
 
   /**
@@ -511,7 +511,7 @@ class WebSocketShard extends EventEmitter {
     this.helloTimeout = setTimeout(() => {
       this.debug('Did not receive HELLO in time. Destroying and connecting again.');
       this.destroy({ reset: true, closeCode: 4009 });
-    }, 20_000).unref();
+    }, 20_000);
   }
 
   /**
@@ -531,7 +531,7 @@ class WebSocketShard extends EventEmitter {
     this.debug(`Setting a heartbeat interval for ${time}ms.`);
     // Sanity checks
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), time).unref();
+    this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), time);
   }
 
   /**
@@ -677,7 +677,7 @@ class WebSocketShard extends EventEmitter {
       this.ratelimit.timer = setTimeout(() => {
         this.ratelimit.remaining = this.ratelimit.total;
         this.processQueue();
-      }, this.ratelimit.time).unref();
+      }, this.ratelimit.time);
     }
     while (this.ratelimit.remaining > 0) {
       const item = this.ratelimit.queue.shift();

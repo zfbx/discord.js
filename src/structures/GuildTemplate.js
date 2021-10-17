@@ -139,7 +139,7 @@ class GuildTemplate extends Base {
       client.incrementMaxListeners();
       client.on(Events.GUILD_CREATE, handleGuild);
 
-      const timeout = setTimeout(() => resolveGuild(client.guilds._add(data)), 10_000).unref();
+      const timeout = setTimeout(() => resolveGuild(client.guilds._add(data)), 10_000);
     });
   }
 
