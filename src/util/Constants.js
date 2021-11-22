@@ -128,8 +128,17 @@ exports.Events = {
   API_RESPONSE: 'apiResponse',
   API_REQUEST: 'apiRequest',
   CLIENT_READY: 'ready',
+  /**
+   * @deprecated See {@link https://github.com/discord/discord-api-docs/issues/3690 this issue} for more information.
+   */
   APPLICATION_COMMAND_CREATE: 'applicationCommandCreate',
+  /**
+   * @deprecated See {@link https://github.com/discord/discord-api-docs/issues/3690 this issue} for more information.
+   */
   APPLICATION_COMMAND_DELETE: 'applicationCommandDelete',
+  /**
+   * @deprecated See {@link https://github.com/discord/discord-api-docs/issues/3690 this issue} for more information.
+   */
   APPLICATION_COMMAND_UPDATE: 'applicationCommandUpdate',
   GUILD_CREATE: 'guildCreate',
   GUILD_DELETE: 'guildDelete',
@@ -220,9 +229,9 @@ exports.PartialTypes = keyMirror(['USER', 'CHANNEL', 'GUILD_MEMBER', 'MESSAGE', 
  * The type of a WebSocket message event, e.g. `MESSAGE_CREATE`. Here are the available events:
  * * READY
  * * RESUMED
- * * APPLICATION_COMMAND_CREATE
- * * APPLICATION_COMMAND_DELETE
- * * APPLICATION_COMMAND_UPDATE
+ * * APPLICATION_COMMAND_CREATE (deprecated)
+ * * APPLICATION_COMMAND_DELETE (deprecated)
+ * * APPLICATION_COMMAND_UPDATE (deprecated)
  * * GUILD_CREATE
  * * GUILD_DELETE
  * * GUILD_UPDATE
@@ -968,10 +977,17 @@ exports.ApplicationCommandPermissionTypes = createEnum([null, 'ROLE', 'USER']);
  * * PING
  * * APPLICATION_COMMAND
  * * MESSAGE_COMPONENT
+ * * APPLICATION_COMMAND_AUTOCOMPLETE
  * @typedef {string} InteractionType
  * @see {@link https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-type}
  */
-exports.InteractionTypes = createEnum([null, 'PING', 'APPLICATION_COMMAND', 'MESSAGE_COMPONENT']);
+exports.InteractionTypes = createEnum([
+  null,
+  'PING',
+  'APPLICATION_COMMAND',
+  'MESSAGE_COMPONENT',
+  'APPLICATION_COMMAND_AUTOCOMPLETE',
+]);
 
 /**
  * The type of an interaction response:
@@ -980,6 +996,7 @@ exports.InteractionTypes = createEnum([null, 'PING', 'APPLICATION_COMMAND', 'MES
  * * DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
  * * DEFERRED_MESSAGE_UPDATE
  * * UPDATE_MESSAGE
+ * * APPLICATION_COMMAND_AUTOCOMPLETE_RESULT
  * @typedef {string} InteractionResponseType
  * @see {@link https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type}
  */
@@ -992,6 +1009,7 @@ exports.InteractionResponseTypes = createEnum([
   'DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE',
   'DEFERRED_MESSAGE_UPDATE',
   'UPDATE_MESSAGE',
+  'APPLICATION_COMMAND_AUTOCOMPLETE_RESULT',
 ]);
 /* eslint-enable max-len */
 

@@ -551,7 +551,15 @@ class Message extends Base {
    * @readonly
    */
   get editable() {
-    return Boolean(this.author.id === this.client.user.id && !this.deleted && (!this.guild || this.channel?.viewable));
+    const precheck = Boolean(
+      this.author.id === this.client.user.id && !this.deleted && (!this.guild || this.channel?.viewable),
+    );
+    // Regardless of permissions thread messages cannot be edited if
+    // the thread is locked.
+    if (this.channel?.isThread()) {
+      return precheck && !this.channel.locked;
+    }
+    return precheck;
   }
 
   /**
@@ -780,12 +788,24 @@ class Message extends Base {
   }
 
   /**
+   * A number that is allowed to be the duration (in minutes) of inactivity after which a thread is automatically
+   * archived. This can be:
+   * * `60` (1 hour)
+   * * `1440` (1 day)
+   * * `4320` (3 days) <warn>This is only available when the guild has the `THREE_DAY_THREAD_ARCHIVE` feature.</warn>
+   * * `10080` (7 days) <warn>This is only available when the guild has the `SEVEN_DAY_THREAD_ARCHIVE` feature.</warn>
+   * * `'MAX'` Based on the guild's features
+   * @typedef {number|string} ThreadAutoArchiveDuration
+   */
+
+  /**
    * Options for starting a thread on a message.
    * @typedef {Object} StartThreadOptions
    * @property {string} name The name of the new thread
-   * @property {ThreadAutoArchiveDuration} autoArchiveDuration The amount of time (in minutes) after which the thread
-   * should automatically archive in case of no recent activity
+   * @property {ThreadAutoArchiveDuration} [autoArchiveDuration=this.channel.defaultAutoArchiveDuration] The amount of
+   * time (in minutes) after which the thread should automatically archive in case of no recent activity
    * @property {string} [reason] Reason for creating the thread
+   * @property {number} [rateLimitPerUser] The rate limit per user (slowmode) for the thread in seconds
    */
 
   /**
@@ -887,6 +907,14 @@ class Message extends Base {
     }
 
     return equal;
+  }
+
+  /**
+   * Whether this message is from a guild.
+   * @returns {boolean}
+   */
+  inGuild() {
+    return Boolean(this.guildId);
   }
 
   /**
