@@ -2,10 +2,15 @@
 
 const EventEmitter = require('node:events');
 const path = require('node:path');
+const process = require('node:process');
 const { Error } = require('../errors');
 const Util = require('../util/Util');
 let childProcess = null;
 let Worker = null;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 /**
  * A self-contained shard created by the {@link ShardingManager}. Each one has a {@link ChildProcess} that contains
@@ -201,7 +206,7 @@ class Shard extends EventEmitter {
    */
   async respawn({ delay = 500, timeout = 30_000 } = {}) {
     this.kill();
-    if (delay > 0) await Util.delayFor(delay);
+    if (delay > 0) await sleep(delay);
     return this.spawn(timeout);
   }
 
@@ -266,11 +271,12 @@ class Shard extends EventEmitter {
   /**
    * Evaluates a script or function on the shard, in the context of the {@link Client}.
    * @param {string|Function} script JavaScript to run on the shard
+   * @param {*} [context] The context for the eval
    * @returns {Promise<*>} Result of the script execution
    */
-  eval(script) {
+  eval(script, context) {
     // Stringify the script if it's a Function
-    const _eval = typeof script === 'function' ? `(${script})(this)` : script;
+    const _eval = typeof script === 'function' ? `(${script})(this, ${JSON.stringify(context)})` : script;
 
     // Shard is dead (maybe respawning), don't cache anything and error immediately
     if (!this.process && !this.worker) return Promise.reject(new Error('SHARDING_NO_CHILD_EXISTS', this.id));

@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const process = require('node:process');
 const util = require('node:util');
 const fetch = require('node-fetch');
 const { owner, token } = require('./auth.js');
@@ -12,7 +13,6 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 const buffer = l => fetch(l).then(res => res.buffer());
 const read = util.promisify(fs.readFile);
 const readStream = fs.createReadStream;
-const wait = util.promisify(setTimeout);
 
 const linkA = 'https://lolisafe.moe/iiDMtAXA.png';
 const linkB = 'https://lolisafe.moe/9hSpedPh.png';
@@ -20,6 +20,10 @@ const fileA = path.join(__dirname, 'blobReach.png');
 
 const embed = () => new MessageEmbed();
 const attach = (attachment, name) => new MessageAttachment(attachment, name);
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const tests = [
   m => m.channel.send('x'),
@@ -97,7 +101,7 @@ client.on('messageCreate', async message => {
     for (const [i, test] of tests.entries()) {
       await message.channel.send(`**#${i}**\n\`\`\`js\n${test.toString()}\`\`\``);
       await test(message).catch(e => message.channel.send(`Error!\n\`\`\`\n${e}\`\`\``));
-      await wait(1_000);
+      await sleep(1_000);
     }
     /* eslint-enable no-await-in-loop */
   } else if (match) {

@@ -65,7 +65,6 @@ class TextBasedChannel {
    * @property {FileOptions[]|BufferResolvable[]|MessageAttachment[]} [files] Files to send with the message
    * @property {MessageActionRow[]|MessageActionRowOptions[]} [components]
    * Action rows containing interactive components for the message (buttons, select menus)
-   * @property {StickerResolvable[]} [stickers=[]] Stickers to send in the message
    * @property {MessageAttachment[]} [attachments] Attachments to send in the message
    */
 
@@ -73,6 +72,7 @@ class TextBasedChannel {
    * Options provided when sending or editing a message.
    * @typedef {BaseMessageOptions} MessageOptions
    * @property {ReplyOptions} [reply] The options for replying to a message
+   * @property {StickerResolvable[]} [stickers=[]] Stickers to send in the message
    */
 
   /**
@@ -156,7 +156,7 @@ class TextBasedChannel {
    */
   async send(options) {
     const User = require('../User');
-    const GuildMember = require('../GuildMember');
+    const { GuildMember } = require('../GuildMember');
 
     if (this instanceof User || this instanceof GuildMember) {
       const dm = await this.createDM();
@@ -294,7 +294,7 @@ class TextBasedChannel {
     if (Array.isArray(messages) || messages instanceof Collection) {
       let messageIds = messages instanceof Collection ? [...messages.keys()] : messages.map(m => m.id ?? m);
       if (filterOld) {
-        messageIds = messageIds.filter(id => Date.now() - SnowflakeUtil.deconstruct(id).timestamp < 1_209_600_000);
+        messageIds = messageIds.filter(id => Date.now() - SnowflakeUtil.timestampFrom(id) < 1_209_600_000);
       }
       if (messageIds.length === 0) return new Collection();
       if (messageIds.length === 1) {

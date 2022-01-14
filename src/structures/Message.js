@@ -1,5 +1,6 @@
 'use strict';
 
+const process = require('node:process');
 const { Collection } = require('@discordjs/collection');
 const Base = require('./Base');
 const BaseMessageComponent = require('./BaseMessageComponent');
@@ -10,7 +11,7 @@ const Embed = require('./MessageEmbed');
 const Mentions = require('./MessageMentions');
 const MessagePayload = require('./MessagePayload');
 const ReactionCollector = require('./ReactionCollector');
-const Sticker = require('./Sticker');
+const { Sticker } = require('./Sticker');
 const { Error } = require('../errors');
 const ReactionManager = require('../managers/ReactionManager');
 const { InteractionTypes, MessageTypes, SystemMessageTypes } = require('../util/Constants');
@@ -18,6 +19,14 @@ const MessageFlags = require('../util/MessageFlags');
 const Permissions = require('../util/Permissions');
 const SnowflakeUtil = require('../util/SnowflakeUtil');
 const Util = require('../util/Util');
+
+/**
+ * @type {WeakSet<Message>}
+ * @private
+ * @internal
+ */
+const deletedMessages = new WeakSet();
+let deprecationEmittedForDeleted = false;
 
 /**
  * Represents a message on Discord.
@@ -39,12 +48,6 @@ class Message extends Base {
      */
     this.guildId = data.guild_id ?? this.channel?.guild?.id ?? null;
 
-    /**
-     * Whether this message has been deleted
-     * @type {boolean}
-     */
-    this.deleted = false;
-
     this._patch(data);
   }
 
@@ -59,7 +62,7 @@ class Message extends Base {
      * The timestamp the message was sent at
      * @type {number}
      */
-    this.createdTimestamp = SnowflakeUtil.deconstruct(this.id).timestamp;
+    this.createdTimestamp = SnowflakeUtil.timestampFrom(this.id);
 
     if ('type' in data) {
       /**
@@ -293,7 +296,7 @@ class Message extends Base {
     /**
      * Reference data sent in a message that contains ids identifying the referenced message.
      * This can be present in the following types of message:
-     * * Crossposted messages (IS_CROSSPOST {@link MessageFlags#FLAGS message flag})
+     * * Crossposted messages (IS_CROSSPOST {@link MessageFlags.FLAGS message flag})
      * * CHANNEL_FOLLOW_ADD
      * * CHANNEL_PINNED_MESSAGE
      * * REPLY
@@ -346,6 +349,36 @@ class Message extends Base {
     } else {
       this.interaction ??= null;
     }
+  }
+
+  /**
+   * Whether or not the structure has been deleted
+   * @type {boolean}
+   * @deprecated This will be removed in the next major version, see https://github.com/discordjs/discord.js/issues/7091
+   */
+  get deleted() {
+    if (!deprecationEmittedForDeleted) {
+      deprecationEmittedForDeleted = true;
+      process.emitWarning(
+        'Message#deleted is deprecated, see https://github.com/discordjs/discord.js/issues/7091.',
+        'DeprecationWarning',
+      );
+    }
+
+    return deletedMessages.has(this);
+  }
+
+  set deleted(value) {
+    if (!deprecationEmittedForDeleted) {
+      deprecationEmittedForDeleted = true;
+      process.emitWarning(
+        'Message#deleted is deprecated, see https://github.com/discordjs/discord.js/issues/7091.',
+        'DeprecationWarning',
+      );
+    }
+
+    if (value) deletedMessages.add(this);
+    else deletedMessages.delete(this);
   }
 
   /**
@@ -552,7 +585,7 @@ class Message extends Base {
    */
   get editable() {
     const precheck = Boolean(
-      this.author.id === this.client.user.id && !this.deleted && (!this.guild || this.channel?.viewable),
+      this.author.id === this.client.user.id && !deletedMessages.has(this) && (!this.guild || this.channel?.viewable),
     );
     // Regardless of permissions thread messages cannot be edited if
     // the thread is locked.
@@ -568,7 +601,7 @@ class Message extends Base {
    * @readonly
    */
   get deletable() {
-    if (this.deleted) {
+    if (deletedMessages.has(this)) {
       return false;
     }
     if (!this.guild) {
@@ -578,9 +611,16 @@ class Message extends Base {
     if (!this.channel?.viewable) {
       return false;
     }
+
+    const permissions = this.channel?.permissionsFor(this.client.user);
+    if (!permissions) return false;
+    // This flag allows deleting even if timed out
+    if (permissions.has(Permissions.FLAGS.ADMINISTRATOR, false)) return true;
+
     return Boolean(
       this.author.id === this.client.user.id ||
-        this.channel?.permissionsFor(this.client.user)?.has(Permissions.FLAGS.MANAGE_MESSAGES, false),
+        (permissions.has(Permissions.FLAGS.MANAGE_MESSAGES, false) &&
+          this.guild.me.communicationDisabledUntilTimestamp < Date.now()),
     );
   }
 
@@ -593,7 +633,7 @@ class Message extends Base {
     const { channel } = this;
     return Boolean(
       !this.system &&
-        !this.deleted &&
+        !deletedMessages.has(this) &&
         (!this.guild ||
           (channel?.viewable &&
             channel?.permissionsFor(this.client.user)?.has(Permissions.FLAGS.MANAGE_MESSAGES, false))),
@@ -629,7 +669,7 @@ class Message extends Base {
         this.type === 'DEFAULT' &&
         channel.viewable &&
         channel.permissionsFor(this.client.user)?.has(bitfield, false) &&
-        !this.deleted,
+        !deletedMessages.has(this),
     );
   }
 
@@ -758,6 +798,7 @@ class Message extends Base {
    * @typedef {BaseMessageOptions} ReplyMessageOptions
    * @property {boolean} [failIfNotExists=true] Whether to error if the referenced message
    * does not exist (creates a standard message in this case when false)
+   * @property {StickerResolvable[]} [stickers=[]] Stickers to send in the message
    */
 
   /**
@@ -941,4 +982,5 @@ class Message extends Base {
   }
 }
 
-module.exports = Message;
+exports.Message = Message;
+exports.deletedMessages = deletedMessages;
