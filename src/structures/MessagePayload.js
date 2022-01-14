@@ -1,5 +1,6 @@
 'use strict';
 
+const { Buffer } = require('node:buffer');
 const BaseMessageComponent = require('./BaseMessageComponent');
 const MessageEmbed = require('./MessageEmbed');
 const { RangeError } = require('../errors');
@@ -66,7 +67,7 @@ class MessagePayload {
    */
   get isUser() {
     const User = require('./User');
-    const GuildMember = require('./GuildMember');
+    const { GuildMember } = require('./GuildMember');
     return this.target instanceof User || this.target instanceof GuildMember;
   }
 
@@ -76,7 +77,7 @@ class MessagePayload {
    * @readonly
    */
   get isMessage() {
-    const Message = require('./Message');
+    const { Message } = require('./Message');
     return this.target instanceof Message;
   }
 
@@ -182,7 +183,7 @@ class MessagePayload {
       description: file.description,
     }));
     if (Array.isArray(this.options.attachments)) {
-      this.options.attachments.push(...attachments);
+      this.options.attachments.push(...(attachments ?? []));
     } else {
       this.options.attachments = attachments;
     }
