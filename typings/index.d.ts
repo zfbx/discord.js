@@ -3783,20 +3783,15 @@ export interface Caches {
   ApplicationCommandManager: [manager: typeof ApplicationCommandManager, holds: typeof ApplicationCommand];
   BaseGuildEmojiManager: [manager: typeof BaseGuildEmojiManager, holds: typeof GuildEmoji];
   GuildEmojiManager: [manager: typeof GuildEmojiManager, holds: typeof GuildEmoji];
-  // TODO: ChannelManager: [manager: typeof ChannelManager, holds: typeof Channel];
-  // TODO: GuildChannelManager: [manager: typeof GuildChannelManager, holds: typeof GuildChannel];
-  // TODO: GuildManager: [manager: typeof GuildManager, holds: typeof Guild];
   GuildMemberManager: [manager: typeof GuildMemberManager, holds: typeof GuildMember];
   GuildBanManager: [manager: typeof GuildBanManager, holds: typeof GuildBan];
   GuildInviteManager: [manager: typeof GuildInviteManager, holds: typeof Invite];
   GuildScheduledEventManager: [manager: typeof GuildScheduledEventManager, holds: typeof GuildScheduledEvent];
   GuildStickerManager: [manager: typeof GuildStickerManager, holds: typeof Sticker];
   MessageManager: [manager: typeof MessageManager, holds: typeof Message];
-  // TODO: PermissionOverwriteManager: [manager: typeof PermissionOverwriteManager, holds: typeof PermissionOverwrites];
   PresenceManager: [manager: typeof PresenceManager, holds: typeof Presence];
   ReactionManager: [manager: typeof ReactionManager, holds: typeof MessageReaction];
   ReactionUserManager: [manager: typeof ReactionUserManager, holds: typeof User];
-  // TODO: RoleManager: [manager: typeof RoleManager, holds: typeof Role];
   StageInstanceManager: [manager: typeof StageInstanceManager, holds: typeof StageInstance];
   ThreadManager: [manager: typeof ThreadManager, holds: typeof ThreadChannel];
   ThreadMemberManager: [manager: typeof ThreadMemberManager, holds: typeof ThreadMember];
@@ -4763,7 +4758,7 @@ export interface GuildListMembersOptions {
   cache?: boolean;
 }
 
-// TODO: use conditional types for better TS support
+// Use conditional types for better TS support
 export interface GuildScheduledEventCreateOptions {
   name: string;
   scheduledStartTime: DateResolvable;

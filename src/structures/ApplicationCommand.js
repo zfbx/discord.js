@@ -241,7 +241,6 @@ class ApplicationCommand extends Base {
       ('autocomplete' in command && command.autocomplete !== this.autocomplete) ||
       (commandType && commandType !== this.type) ||
       // Future proof for options being nullable
-      // TODO: remove ?? 0 on each when nullable
       (command.options?.length ?? 0) !== (this.options?.length ?? 0) ||
       (command.defaultPermission ?? command.default_permission ?? true) !== this.defaultPermission
     ) {

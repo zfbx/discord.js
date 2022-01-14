@@ -7,7 +7,7 @@ const Util = require('../util/Util');
 let deprecationEmittedForSetAuthor = false;
 let deprecationEmittedForSetFooter = false;
 
-// TODO: Remove the deprecated code for `setAuthor()` and `setFooter()`.
+// Remove the deprecated code for `setAuthor()` and `setFooter()`.
 
 /**
  * Represents an embed in a message (image/video preview, rich embed, etc.)
