@@ -3,7 +3,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const process = require('node:process');
-const { setTimeout: sleep } = require('node:timers/promises');
 const util = require('node:util');
 const fetch = require('node-fetch');
 const { owner, token } = require('./auth.js');
@@ -21,6 +20,10 @@ const fileA = path.join(__dirname, 'blobReach.png');
 
 const embed = () => new MessageEmbed();
 const attach = (attachment, name) => new MessageAttachment(attachment, name);
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const tests = [
   m => m.channel.send('x'),

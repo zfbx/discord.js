@@ -1,7 +1,5 @@
 'use strict';
 
-const { setTimeout } = require('node:timers');
-const { setTimeout: sleep } = require('node:timers/promises');
 const { AsyncQueue } = require('@sapphire/async-queue');
 const DiscordAPIError = require('./DiscordAPIError');
 const HTTPError = require('./HTTPError');
@@ -25,6 +23,10 @@ function calculateReset(reset, resetAfter, serverDate) {
     return Date.now() + Number(resetAfter) * 1_000;
   }
   return new Date(Number(reset) * 1_000).getTime() - getAPIOffset(serverDate);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /* Invalid request limiting is done on a per-IP basis, not a per-token basis.

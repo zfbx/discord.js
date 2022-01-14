@@ -3,12 +3,14 @@
 const EventEmitter = require('node:events');
 const path = require('node:path');
 const process = require('node:process');
-const { setTimeout } = require('node:timers');
-const { setTimeout: sleep } = require('node:timers/promises');
 const { Error } = require('../errors');
 const Util = require('../util/Util');
 let childProcess = null;
 let Worker = null;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 /**
  * A self-contained shard created by the {@link ShardingManager}. Each one has a {@link ChildProcess} that contains

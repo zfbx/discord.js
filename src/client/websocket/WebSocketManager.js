@@ -1,8 +1,6 @@
 'use strict';
 
 const EventEmitter = require('node:events');
-const { setImmediate } = require('node:timers');
-const { setTimeout: sleep } = require('node:timers/promises');
 const { Collection } = require('@discordjs/collection');
 const { RPCErrorCodes } = require('discord-api-types/v9');
 const WebSocketShard = require('./WebSocketShard');
@@ -26,6 +24,10 @@ const UNRESUMABLE_CLOSE_CODES = [
   RPCErrorCodes.InvalidPermissions,
   RPCErrorCodes.InvalidClientId,
 ];
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 /**
  * The WebSocket manager for this client.
