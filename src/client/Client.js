@@ -1,8 +1,8 @@
 'use strict';
 
-const { Collection } = require('@discordjs/collection');
 const process = require('node:process');
 const { setInterval } = require('node:timers');
+const { Collection } = require('@discordjs/collection');
 const BaseClient = require('./BaseClient');
 const ActionsManager = require('./actions/ActionsManager');
 const ClientVoiceManager = require('./voice/ClientVoiceManager');
