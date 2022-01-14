@@ -440,7 +440,7 @@ class Sweepers {
       if (sweepFn === null) return;
       if (typeof sweepFn !== 'function') throw new TypeError('SWEEP_FILTER_RETURN');
       this[sweepKey](sweepFn);
-    }, opts.interval * 1_000).unref();
+    }, opts.interval * 1_000);
   }
 }
 
