@@ -1,8 +1,6 @@
 'use strict';
 
 const EventEmitter = require('node:events');
-const { setImmediate } = require('node:timers');
-const { setTimeout: sleep } = require('node:timers/promises');
 const { Collection } = require('@discordjs/collection');
 const { GatewayCloseCodes, GatewayDispatchEvents, Routes } = require('discord-api-types/v10');
 const WebSocketShard = require('./WebSocketShard');
@@ -11,6 +9,10 @@ const { DiscordjsError, ErrorCodes } = require('../../errors');
 const Events = require('../../util/Events');
 const Status = require('../../util/Status');
 const WebSocketShardEvents = require('../../util/WebSocketShardEvents');
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const BeforeReadyWhitelist = [
   GatewayDispatchEvents.Ready,
@@ -345,7 +347,7 @@ class WebSocketManager extends EventEmitter {
       const item = this.packetQueue.shift();
       setImmediate(() => {
         this.handlePacket(item.packet, item.shard);
-      }).unref();
+      });
     }
 
     if (packet && PacketHandlers[packet.t]) {

@@ -3,13 +3,15 @@
 const EventEmitter = require('node:events');
 const path = require('node:path');
 const process = require('node:process');
-const { setTimeout, clearTimeout } = require('node:timers');
-const { setTimeout: sleep } = require('node:timers/promises');
 const { DiscordjsError, ErrorCodes } = require('../errors');
 const ShardEvents = require('../util/ShardEvents');
 const { makeError, makePlainError } = require('../util/Util');
 let childProcess = null;
 let Worker = null;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 /**
  * A self-contained shard created by the {@link ShardingManager}. Each one has a {@link ChildProcess} that contains

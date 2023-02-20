@@ -1,7 +1,6 @@
 'use strict';
 
 const process = require('node:process');
-const { setTimeout, clearTimeout } = require('node:timers');
 const { Collection } = require('@discordjs/collection');
 const { makeURLSearchParams } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v10');
@@ -237,7 +236,7 @@ class GuildManager extends CachedManager {
         this.client.removeListener(Events.GuildCreate, handleGuild);
         this.client.decrementMaxListeners();
         resolve(this.client.guilds._add(data));
-      }, 10_000).unref();
+      }, 10_000);
     });
   }
 

@@ -1,6 +1,5 @@
 'use strict';
 
-const { setInterval, clearInterval } = require('node:timers');
 const { ThreadChannelTypes, SweeperKeys } = require('./Constants');
 const Events = require('./Events');
 const { DiscordjsTypeError, ErrorCodes } = require('../errors');
@@ -460,7 +459,7 @@ class Sweepers {
       if (sweepFn === null) return;
       if (typeof sweepFn !== 'function') throw new DiscordjsTypeError(ErrorCodes.SweepFilterReturn);
       this[sweepKey](sweepFn);
-    }, opts.interval * 1_000).unref();
+    }, opts.interval * 1_000);
   }
 }
 

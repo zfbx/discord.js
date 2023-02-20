@@ -534,7 +534,7 @@ class GuildMemberManager extends CachedManager {
         this.client.removeListener(Events.GuildMembersChunk, handler);
         this.client.decrementMaxListeners();
         reject(new DiscordjsError(ErrorCodes.GuildMembersTimeout));
-      }, time).unref();
+      }, time);
       this.client.incrementMaxListeners();
       this.client.on(Events.GuildMembersChunk, handler);
     });

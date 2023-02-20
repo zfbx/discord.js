@@ -1,6 +1,5 @@
 'use strict';
 
-const { setTimeout, clearTimeout } = require('node:timers');
 const { RouteBases, Routes } = require('discord-api-types/v10');
 const Base = require('./Base');
 const DataResolver = require('../util/DataResolver');
@@ -149,7 +148,7 @@ class GuildTemplate extends Base {
       client.incrementMaxListeners();
       client.on(Events.GuildCreate, handleGuild);
 
-      const timeout = setTimeout(() => resolveGuild(client.guilds._add(data)), 10_000).unref();
+      const timeout = setTimeout(() => resolveGuild(client.guilds._add(data)), 10_000);
     });
   }
 
