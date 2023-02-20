@@ -1,0 +1,59 @@
+name: Publish dev
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+jobs:
+  npm-publish:
+    name: npm publish
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: '@discordjs/brokers'
+            folder: 'brokers'
+          - package: '@discordjs/builders'
+            folder: 'builders'
+          - package: '@discordjs/collection'
+            folder: 'collection'
+          - package: '@discordjs/core'
+            folder: 'core'
+          - package: 'discord.js'
+            folder: 'discord.js'
+          - package: '@discordjs/proxy'
+            folder: 'proxy'
+          - package: '@discordjs/rest'
+            folder: 'rest'
+          - package: '@discordjs/util'
+            folder: 'util'
+          - package: '@discordjs/voice'
+            folder: 'voice'
+          - package: '@discordjs/ws'
+            folder: 'ws'
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    if: github.repository_owner == 'discordjs'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install node.js v16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install dependencies
+        uses: ./packages/actions/src/yarnCache
+
+      - name: Build dependencies
+        run: yarn build
+
+      - name: Publish package
+        run: |
+          yarn workspace ${{ matrix.package }} release --preid "dev.$(date +%s)-$(git rev-parse --short HEAD)"
+          yarn workspace ${{ matrix.package }} npm publish --tag dev || true
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
