@@ -3,7 +3,7 @@
 const { Buffer } = require('node:buffer');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const { fetch } = require('undici');
+const { fetch } = require('node-fetch');
 const { DiscordjsError, DiscordjsTypeError, ErrorCodes } = require('../errors');
 const Invite = require('../structures/Invite');
 
