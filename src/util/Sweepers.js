@@ -1,12 +1,13 @@
 'use strict';
 
-const { Events, ThreadChannelTypes, SweeperKeys } = require('./Constants');
-const { TypeError } = require('../errors/DJSError.js');
+const { ThreadChannelTypes, SweeperKeys } = require('./Constants');
+const Events = require('./Events');
+const { DiscordjsTypeError, ErrorCodes } = require('../errors');
 
 /**
  * @typedef {Function} GlobalSweepFilter
  * @returns {Function|null} Return `null` to skip sweeping, otherwise a function passed to `sweep()`,
- * See {@link [Collection#sweep](https://discord.js.org/#/docs/collection/main/class/Collection?scrollTo=sweep)}
+ * See {@link [Collection#sweep](https://discord.js.org/docs/packages/collection/stable/Collection:Class#sweep)}
  * for the definition of this function.
  */
 
@@ -70,10 +71,20 @@ class Sweepers {
     const globalCommands = this.client.application?.commands.cache.sweep(filter) ?? 0;
 
     this.client.emit(
-      Events.CACHE_SWEEP,
+      Events.CacheSweep,
       `Swept ${globalCommands} global application commands and ${guildCommands} guild commands in ${guilds} guilds.`,
     );
     return guildCommands + globalCommands;
+  }
+
+  /**
+   * Sweeps all auto moderation rules and removes the ones which are indicated by the filter.
+   * @param {Function} filter The function used to determine
+   * which auto moderation rules will be removed from the caches
+   * @returns {number} Amount of auto moderation rules that were removed from the caches
+   */
+  sweepAutoModerationRules(filter) {
+    return this._sweepGuildDirectProp('autoModerationRules', filter).items;
   }
 
   /**
@@ -129,18 +140,18 @@ class Sweepers {
    */
   sweepMessages(filter) {
     if (typeof filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'filter', 'function');
     }
     let channels = 0;
     let messages = 0;
 
     for (const channel of this.client.channels.cache.values()) {
-      if (!channel.isText()) continue;
+      if (!channel.isTextBased()) continue;
 
       channels++;
       messages += channel.messages.cache.sweep(filter);
     }
-    this.client.emit(Events.CACHE_SWEEP, `Swept ${messages} messages in ${channels} text-based channels.`);
+    this.client.emit(Events.CacheSweep, `Swept ${messages} messages in ${channels} text-based channels.`);
     return messages;
   }
 
@@ -160,14 +171,14 @@ class Sweepers {
    */
   sweepReactions(filter) {
     if (typeof filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'filter', 'function');
     }
     let channels = 0;
     let messages = 0;
     let reactions = 0;
 
     for (const channel of this.client.channels.cache.values()) {
-      if (!channel.isText()) continue;
+      if (!channel.isTextBased()) continue;
       channels++;
 
       for (const message of channel.messages.cache.values()) {
@@ -176,7 +187,7 @@ class Sweepers {
       }
     }
     this.client.emit(
-      Events.CACHE_SWEEP,
+      Events.CacheSweep,
       `Swept ${reactions} reactions on ${messages} messages in ${channels} text-based channels.`,
     );
     return reactions;
@@ -192,6 +203,15 @@ class Sweepers {
   }
 
   /**
+   * Sweeps all guild stickers and removes the ones which are indicated by the filter.
+   * @param {Function} filter The function used to determine which stickers will be removed from the caches.
+   * @returns {number} Amount of stickers that were removed from the caches
+   */
+  sweepStickers(filter) {
+    return this._sweepGuildDirectProp('stickers', filter).items;
+  }
+
+  /**
    * Sweeps all thread members and removes the ones which are indicated by the filter.
    * <info>It is highly recommended to keep the client thread member cached</info>
    * @param {Function} filter The function used to determine which thread members will be removed from the caches.
@@ -199,7 +219,7 @@ class Sweepers {
    */
   sweepThreadMembers(filter) {
     if (typeof filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'filter', 'function');
     }
 
     let threads = 0;
@@ -209,7 +229,7 @@ class Sweepers {
       threads++;
       members += channel.members.cache.sweep(filter);
     }
-    this.client.emit(Events.CACHE_SWEEP, `Swept ${members} thread members in ${threads} threads.`);
+    this.client.emit(Events.CacheSweep, `Swept ${members} thread members in ${threads} threads.`);
     return members;
   }
 
@@ -229,7 +249,7 @@ class Sweepers {
    */
   sweepThreads(filter) {
     if (typeof filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'filter', 'function');
     }
 
     let threads = 0;
@@ -240,7 +260,7 @@ class Sweepers {
         this.client.channels._remove(key);
       }
     }
-    this.client.emit(Events.CACHE_SWEEP, `Swept ${threads} threads.`);
+    this.client.emit(Events.CacheSweep, `Swept ${threads} threads.`);
     return threads;
   }
 
@@ -251,12 +271,12 @@ class Sweepers {
    */
   sweepUsers(filter) {
     if (typeof filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'filter', 'function');
     }
 
     const users = this.client.users.cache.sweep(filter);
 
-    this.client.emit(Events.CACHE_SWEEP, `Swept ${users} users.`);
+    this.client.emit(Events.CacheSweep, `Swept ${users} users.`);
 
     return users;
   }
@@ -302,13 +322,13 @@ class Sweepers {
     excludeFromSweep = () => false,
   } = {}) {
     if (typeof lifetime !== 'number') {
-      throw new TypeError('INVALID_TYPE', 'lifetime', 'number');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'lifetime', 'number');
     }
     if (typeof getComparisonTimestamp !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'getComparisonTimestamp', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'getComparisonTimestamp', 'function');
     }
     if (typeof excludeFromSweep !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'excludeFromSweep', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'excludeFromSweep', 'function');
     }
     return () => {
       if (lifetime <= 0) return null;
@@ -380,7 +400,7 @@ class Sweepers {
    */
   _sweepGuildDirectProp(key, filter, { emit = true, outputName } = {}) {
     if (typeof filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, 'filter', 'function');
     }
 
     let guilds = 0;
@@ -394,7 +414,7 @@ class Sweepers {
     }
 
     if (emit) {
-      this.client.emit(Events.CACHE_SWEEP, `Swept ${items} ${outputName ?? key} in ${guilds} guilds.`);
+      this.client.emit(Events.CacheSweep, `Swept ${items} ${outputName ?? key} in ${guilds} guilds.`);
     }
 
     return { guilds, items };
@@ -408,20 +428,20 @@ class Sweepers {
   _validateProperties(key) {
     const props = this.options[key];
     if (typeof props !== 'object') {
-      throw new TypeError('INVALID_TYPE', `sweepers.${key}`, 'object', true);
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, `sweepers.${key}`, 'object', true);
     }
     if (typeof props.interval !== 'number') {
-      throw new TypeError('INVALID_TYPE', `sweepers.${key}.interval`, 'number');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, `sweepers.${key}.interval`, 'number');
     }
     // Invites, Messages, and Threads can be provided a lifetime parameter, which we use to generate the filter
     if (['invites', 'messages', 'threads'].includes(key) && !('filter' in props)) {
       if (typeof props.lifetime !== 'number') {
-        throw new TypeError('INVALID_TYPE', `sweepers.${key}.lifetime`, 'number');
+        throw new DiscordjsTypeError(ErrorCodes.InvalidType, `sweepers.${key}.lifetime`, 'number');
       }
       return;
     }
     if (typeof props.filter !== 'function') {
-      throw new TypeError('INVALID_TYPE', `sweepers.${key}.filter`, 'function');
+      throw new DiscordjsTypeError(ErrorCodes.InvalidType, `sweepers.${key}.filter`, 'function');
     }
   }
 
@@ -437,7 +457,7 @@ class Sweepers {
     this.intervals[intervalKey] = setInterval(() => {
       const sweepFn = opts.filter();
       if (sweepFn === null) return;
-      if (typeof sweepFn !== 'function') throw new TypeError('SWEEP_FILTER_RETURN');
+      if (typeof sweepFn !== 'function') throw new DiscordjsTypeError(ErrorCodes.SweepFilterReturn);
       this[sweepKey](sweepFn);
     }, opts.interval * 1_000);
   }

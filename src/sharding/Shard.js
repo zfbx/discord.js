@@ -3,10 +3,12 @@
 const EventEmitter = require('node:events');
 const path = require('node:path');
 const process = require('node:process');
-const { Error } = require('../errors');
-const Util = require('../util/Util');
+const { DiscordjsError, ErrorCodes } = require('../errors');
+const ShardEvents = require('../util/ShardEvents');
+const { makeError, makePlainError } = require('../util/Util');
 let childProcess = null;
 let Worker = null;
+
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -16,14 +18,20 @@ function sleep(ms) {
  * A self-contained shard created by the {@link ShardingManager}. Each one has a {@link ChildProcess} that contains
  * an instance of the bot and its {@link Client}. When its child process/worker exits for any reason, the shard will
  * spawn a new one to replace it as necessary.
- * @extends EventEmitter
+ * @extends {EventEmitter}
  */
 class Shard extends EventEmitter {
   constructor(manager, id) {
     super();
 
-    if (manager.mode === 'process') childProcess = require('node:child_process');
-    else if (manager.mode === 'worker') Worker = require('node:worker_threads').Worker;
+    switch (manager.mode) {
+      case 'process':
+        childProcess = require('node:child_process');
+        break;
+      case 'worker':
+        Worker = require('node:worker_threads').Worker;
+        break;
+    }
 
     /**
      * Manager that created the shard
@@ -36,6 +44,12 @@ class Shard extends EventEmitter {
      * @type {number}
      */
     this.id = id;
+
+    /**
+     * Whether to pass silent flag to the shard's process (only when {@link ShardingManager#mode} is `process`)
+     * @type {boolean}
+     */
+    this.silent = manager.silent;
 
     /**
      * Arguments for the shard's process (only when {@link ShardingManager#mode} is `process`)
@@ -108,23 +122,27 @@ class Shard extends EventEmitter {
    * @returns {Promise<ChildProcess>}
    */
   spawn(timeout = 30_000) {
-    if (this.process) throw new Error('SHARDING_PROCESS_EXISTS', this.id);
-    if (this.worker) throw new Error('SHARDING_WORKER_EXISTS', this.id);
+    if (this.process) throw new DiscordjsError(ErrorCodes.ShardingProcessExists, this.id);
+    if (this.worker) throw new DiscordjsError(ErrorCodes.ShardingWorkerExists, this.id);
 
     this._exitListener = this._handleExit.bind(this, undefined, timeout);
 
-    if (this.manager.mode === 'process') {
-      this.process = childProcess
-        .fork(path.resolve(this.manager.file), this.args, {
-          env: this.env,
-          execArgv: this.execArgv,
-        })
-        .on('message', this._handleMessage.bind(this))
-        .on('exit', this._exitListener);
-    } else if (this.manager.mode === 'worker') {
-      this.worker = new Worker(path.resolve(this.manager.file), { workerData: this.env })
-        .on('message', this._handleMessage.bind(this))
-        .on('exit', this._exitListener);
+    switch (this.manager.mode) {
+      case 'process':
+        this.process = childProcess
+          .fork(path.resolve(this.manager.file), this.args, {
+            env: this.env,
+            execArgv: this.execArgv,
+            silent: this.silent,
+          })
+          .on('message', this._handleMessage.bind(this))
+          .on('exit', this._exitListener);
+        break;
+      case 'worker':
+        this.worker = new Worker(path.resolve(this.manager.file), { workerData: this.env })
+          .on('message', this._handleMessage.bind(this))
+          .on('exit', this._exitListener);
+        break;
     }
 
     this._evals.clear();
@@ -137,7 +155,7 @@ class Shard extends EventEmitter {
      * @event Shard#spawn
      * @param {ChildProcess|Worker} process Child process/worker that was created
      */
-    this.emit('spawn', child);
+    this.emit(ShardEvents.Spawn, child);
 
     if (timeout === -1 || timeout === Infinity) return Promise.resolve(child);
     return new Promise((resolve, reject) => {
@@ -155,17 +173,17 @@ class Shard extends EventEmitter {
 
       const onDisconnect = () => {
         cleanup();
-        reject(new Error('SHARDING_READY_DISCONNECTED', this.id));
+        reject(new DiscordjsError(ErrorCodes.ShardingReadyDisconnected, this.id));
       };
 
       const onDeath = () => {
         cleanup();
-        reject(new Error('SHARDING_READY_DIED', this.id));
+        reject(new DiscordjsError(ErrorCodes.ShardingReadyDied, this.id));
       };
 
       const onTimeout = () => {
         cleanup();
-        reject(new Error('SHARDING_READY_TIMEOUT', this.id));
+        reject(new DiscordjsError(ErrorCodes.ShardingReadyTimeout, this.id));
       };
 
       const spawnTimeoutTimer = setTimeout(onTimeout, timeout);
@@ -240,7 +258,9 @@ class Shard extends EventEmitter {
    */
   fetchClientValue(prop) {
     // Shard is dead (maybe respawning), don't cache anything and error immediately
-    if (!this.process && !this.worker) return Promise.reject(new Error('SHARDING_NO_CHILD_EXISTS', this.id));
+    if (!this.process && !this.worker) {
+      return Promise.reject(new DiscordjsError(ErrorCodes.ShardingNoChildExists, this.id));
+    }
 
     // Cached promise from previous call
     if (this._fetches.has(prop)) return this._fetches.get(prop);
@@ -251,14 +271,18 @@ class Shard extends EventEmitter {
       const listener = message => {
         if (message?._fetchProp !== prop) return;
         child.removeListener('message', listener);
+        this.decrementMaxListeners(child);
         this._fetches.delete(prop);
         if (!message._error) resolve(message._result);
-        else reject(Util.makeError(message._error));
+        else reject(makeError(message._error));
       };
+
+      this.incrementMaxListeners(child);
       child.on('message', listener);
 
       this.send({ _fetchProp: prop }).catch(err => {
         child.removeListener('message', listener);
+        this.decrementMaxListeners(child);
         this._fetches.delete(prop);
         reject(err);
       });
@@ -279,7 +303,9 @@ class Shard extends EventEmitter {
     const _eval = typeof script === 'function' ? `(${script})(this, ${JSON.stringify(context)})` : script;
 
     // Shard is dead (maybe respawning), don't cache anything and error immediately
-    if (!this.process && !this.worker) return Promise.reject(new Error('SHARDING_NO_CHILD_EXISTS', this.id));
+    if (!this.process && !this.worker) {
+      return Promise.reject(new DiscordjsError(ErrorCodes.ShardingNoChildExists, this.id));
+    }
 
     // Cached promise from previous call
     if (this._evals.has(_eval)) return this._evals.get(_eval);
@@ -290,14 +316,18 @@ class Shard extends EventEmitter {
       const listener = message => {
         if (message?._eval !== _eval) return;
         child.removeListener('message', listener);
+        this.decrementMaxListeners(child);
         this._evals.delete(_eval);
         if (!message._error) resolve(message._result);
-        else reject(Util.makeError(message._error));
+        else reject(makeError(message._error));
       };
+
+      this.incrementMaxListeners(child);
       child.on('message', listener);
 
       this.send({ _eval }).catch(err => {
         child.removeListener('message', listener);
+        this.decrementMaxListeners(child);
         this._evals.delete(_eval);
         reject(err);
       });
@@ -321,7 +351,7 @@ class Shard extends EventEmitter {
          * Emitted upon the shard's {@link Client#event:shardReady} event.
          * @event Shard#ready
          */
-        this.emit('ready');
+        this.emit(ShardEvents.Ready);
         return;
       }
 
@@ -332,7 +362,7 @@ class Shard extends EventEmitter {
          * Emitted upon the shard's {@link Client#event:shardDisconnect} event.
          * @event Shard#disconnect
          */
-        this.emit('disconnect');
+        this.emit(ShardEvents.Disconnect);
         return;
       }
 
@@ -343,7 +373,18 @@ class Shard extends EventEmitter {
          * Emitted upon the shard's {@link Client#event:shardReconnecting} event.
          * @event Shard#reconnecting
          */
-        this.emit('reconnecting');
+        this.emit(ShardEvents.Reconnecting);
+        return;
+      }
+
+      // Shard has resumed
+      if (message._resume) {
+        this.ready = true;
+        /**
+         * Emitted upon the shard's {@link Client#event:shardResume} event.
+         * @event Shard#resume
+         */
+        this.emit(ShardEvents.Resume);
         return;
       }
 
@@ -352,7 +393,7 @@ class Shard extends EventEmitter {
         const resp = { _sFetchProp: message._sFetchProp, _sFetchPropShard: message._sFetchPropShard };
         this.manager.fetchClientValues(message._sFetchProp, message._sFetchPropShard).then(
           results => this.send({ ...resp, _result: results }),
-          err => this.send({ ...resp, _error: Util.makePlainError(err) }),
+          err => this.send({ ...resp, _error: makePlainError(err) }),
         );
         return;
       }
@@ -362,7 +403,7 @@ class Shard extends EventEmitter {
         const resp = { _sEval: message._sEval, _sEvalShard: message._sEvalShard };
         this.manager._performOnShards('eval', [message._sEval], message._sEvalShard).then(
           results => this.send({ ...resp, _result: results }),
-          err => this.send({ ...resp, _error: Util.makePlainError(err) }),
+          err => this.send({ ...resp, _error: makePlainError(err) }),
         );
         return;
       }
@@ -382,7 +423,7 @@ class Shard extends EventEmitter {
      * @event Shard#message
      * @param {*} message Message that was received
      */
-    this.emit('message', message);
+    this.emit(ShardEvents.Message, message);
   }
 
   /**
@@ -398,7 +439,7 @@ class Shard extends EventEmitter {
      * @event Shard#death
      * @param {ChildProcess|Worker} process Child process/worker that exited
      */
-    this.emit('death', this.process ?? this.worker);
+    this.emit(ShardEvents.Death, this.process ?? this.worker);
 
     this.ready = false;
     this.process = null;
@@ -406,7 +447,31 @@ class Shard extends EventEmitter {
     this._evals.clear();
     this._fetches.clear();
 
-    if (respawn) this.spawn(timeout).catch(err => this.emit('error', err));
+    if (respawn) this.spawn(timeout).catch(err => this.emit(ShardEvents.Error, err));
+  }
+
+  /**
+   * Increments max listeners by one for a given emitter, if they are not zero.
+   * @param {EventEmitter|process} emitter The emitter that emits the events.
+   * @private
+   */
+  incrementMaxListeners(emitter) {
+    const maxListeners = emitter.getMaxListeners();
+    if (maxListeners !== 0) {
+      emitter.setMaxListeners(maxListeners + 1);
+    }
+  }
+
+  /**
+   * Decrements max listeners by one for a given emitter, if they are not zero.
+   * @param {EventEmitter|process} emitter The emitter that emits the events.
+   * @private
+   */
+  decrementMaxListeners(emitter) {
+    const maxListeners = emitter.getMaxListeners();
+    if (maxListeners !== 0) {
+      emitter.setMaxListeners(maxListeners - 1);
+    }
   }
 }
 
