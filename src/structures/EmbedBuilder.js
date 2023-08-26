@@ -35,7 +35,6 @@ class EmbedBuilder extends BuildersEmbed {
   /**
    * The accumulated length for the embed title, description, fields, footer text, and author name.
    * @type {number}
-   * @readonly
    */
   get length() {
     return embedLength(this.data);

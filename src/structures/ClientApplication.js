@@ -15,7 +15,7 @@ const PermissionsBitField = require('../util/PermissionsBitField');
  */
 
 /**
- * Represents a client application.
+ * Represents a Client OAuth2 Application.
  * @extends {Application}
  */
 class ClientApplication extends Application {
@@ -67,26 +67,6 @@ class ClientApplication extends Application {
        * @type {ApplicationFlagsBitField}
        */
       this.flags = new ApplicationFlagsBitField(data.flags).freeze();
-    }
-
-    if ('approximate_guild_count' in data) {
-      /**
-       * An approximate amount of guilds this application is in.
-       * @type {?number}
-       */
-      this.approximateGuildCount = data.approximate_guild_count;
-    } else {
-      this.approximateGuildCount ??= null;
-    }
-
-    if ('guild_id' in data) {
-      /**
-       * The id of the guild associated with this application.
-       * @type {?Snowflake}
-       */
-      this.guildId = data.guild_id;
-    } else {
-      this.guildId ??= null;
     }
 
     if ('cover_image' in data) {
@@ -151,15 +131,6 @@ class ClientApplication extends Application {
   }
 
   /**
-   * The guild associated with this application.
-   * @type {?Guild}
-   * @readonly
-   */
-  get guild() {
-    return this.client.guilds.cache.get(this.guildId) ?? null;
-  }
-
-  /**
    * Whether this application is partial
    * @type {boolean}
    * @readonly
@@ -173,8 +144,8 @@ class ClientApplication extends Application {
    * @returns {Promise<ClientApplication>}
    */
   async fetch() {
-    const data = await this.client.rest.get(Routes.currentApplication());
-    this._patch(data);
+    const app = await this.client.rest.get(Routes.oauth2CurrentApplication());
+    this._patch(app);
     return this;
   }
 

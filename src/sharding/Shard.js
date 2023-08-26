@@ -9,7 +9,6 @@ const { makeError, makePlainError } = require('../util/Util');
 let childProcess = null;
 let Worker = null;
 
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }

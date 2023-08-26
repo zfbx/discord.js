@@ -38,7 +38,7 @@ class DMChannel extends BaseChannel {
        */
       this.recipientId = recipient.id;
 
-      if ('username' in recipient || this.client.options.partials.includes(Partials.User)) {
+      if ('username' in recipient || this.client.options.partials.includes(Partials.Users)) {
         this.client.users._add(recipient);
       }
     }
