@@ -45,12 +45,6 @@ class Shard extends EventEmitter {
     this.id = id;
 
     /**
-     * Whether to pass silent flag to the shard's process (only when {@link ShardingManager#mode} is `process`)
-     * @type {boolean}
-     */
-    this.silent = manager.silent;
-
-    /**
      * Arguments for the shard's process (only when {@link ShardingManager#mode} is `process`)
      * @type {string[]}
      */
@@ -132,7 +126,6 @@ class Shard extends EventEmitter {
           .fork(path.resolve(this.manager.file), this.args, {
             env: this.env,
             execArgv: this.execArgv,
-            silent: this.silent,
           })
           .on('message', this._handleMessage.bind(this))
           .on('exit', this._exitListener);
@@ -373,17 +366,6 @@ class Shard extends EventEmitter {
          * @event Shard#reconnecting
          */
         this.emit(ShardEvents.Reconnecting);
-        return;
-      }
-
-      // Shard has resumed
-      if (message._resume) {
-        this.ready = true;
-        /**
-         * Emitted upon the shard's {@link Client#event:shardResume} event.
-         * @event Shard#resume
-         */
-        this.emit(ShardEvents.Resume);
         return;
       }
 

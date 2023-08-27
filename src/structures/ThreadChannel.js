@@ -4,7 +4,7 @@ const { ChannelType, PermissionFlagsBits, Routes, ChannelFlags } = require('disc
 const { BaseChannel } = require('./BaseChannel');
 const TextBasedChannel = require('./interfaces/TextBasedChannel');
 const { DiscordjsRangeError, ErrorCodes } = require('../errors');
-const GuildMessageManager = require('../managers/GuildMessageManager');
+const MessageManager = require('../managers/MessageManager');
 const ThreadMemberManager = require('../managers/ThreadMemberManager');
 const ChannelFlagsBitField = require('../util/ChannelFlagsBitField');
 
@@ -31,9 +31,9 @@ class ThreadChannel extends BaseChannel {
 
     /**
      * A manager of the messages sent to this thread
-     * @type {GuildMessageManager}
+     * @type {MessageManager}
      */
-    this.messages = new GuildMessageManager(this);
+    this.messages = new MessageManager(this);
 
     /**
      * A manager of the members that are part of this thread

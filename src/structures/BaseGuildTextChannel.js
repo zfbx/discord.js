@@ -2,8 +2,8 @@
 
 const GuildChannel = require('./GuildChannel');
 const TextBasedChannel = require('./interfaces/TextBasedChannel');
-const GuildMessageManager = require('../managers/GuildMessageManager');
 const GuildTextThreadManager = require('../managers/GuildTextThreadManager');
+const MessageManager = require('../managers/MessageManager');
 
 /**
  * Represents a text-based guild channel on Discord.
@@ -16,9 +16,9 @@ class BaseGuildTextChannel extends GuildChannel {
 
     /**
      * A manager of the messages sent to this channel
-     * @type {GuildMessageManager}
+     * @type {MessageManager}
      */
-    this.messages = new GuildMessageManager(this);
+    this.messages = new MessageManager(this);
 
     /**
      * A manager of the threads belonging to this channel

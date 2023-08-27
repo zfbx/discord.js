@@ -70,7 +70,7 @@ class WebSocketShard extends EventEmitter {
 
     /**
      * @external SessionInfo
-     * @see {@link https://discord.js.org/docs/packages/ws/stable/SessionInfo:Interface}
+     * @see {@link https://discord.js.org/#/docs/ws/main/typedef/SessionInfo}
      */
 
     /**

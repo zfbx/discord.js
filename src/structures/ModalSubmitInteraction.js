@@ -88,13 +88,12 @@ class ModalSubmitInteraction extends BaseInteraction {
    * @returns {ModalData[]}
    */
   static transformComponent(rawComponent) {
-    return rawComponent.components
-      ? { type: rawComponent.type, components: rawComponent.components.map(c => this.transformComponent(c)) }
-      : {
-          value: rawComponent.value,
-          type: rawComponent.type,
-          customId: rawComponent.custom_id,
-        };
+    return {
+      value: rawComponent.value,
+      type: rawComponent.type,
+      customId: rawComponent.custom_id,
+      components: rawComponent.components?.map(c => this.transformComponent(c)),
+    };
   }
 
   /**

@@ -17,9 +17,9 @@ class TextBasedChannel {
   constructor() {
     /**
      * A manager of the messages sent to this channel
-     * @type {GuildMessageManager}
+     * @type {MessageManager}
      */
-    this.messages = new GuildMessageManager(this);
+    this.messages = new MessageManager(this);
 
     /**
      * The channel's last message id, if one was sent
@@ -410,4 +410,4 @@ module.exports = TextBasedChannel;
 
 // Fixes Circular
 // eslint-disable-next-line import/order
-const GuildMessageManager = require('../../managers/GuildMessageManager');
+const MessageManager = require('../../managers/MessageManager');

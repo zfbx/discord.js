@@ -24,7 +24,11 @@ class GenericAction {
   }
 
   getPayload(data, manager, id, partialType, cache) {
-    return this.client.options.partials.includes(partialType) ? manager._add(data, cache) : manager.cache.get(id);
+    const existing = manager.cache.get(id);
+    if (!existing && this.client.options.partials.includes(partialType)) {
+      return manager._add(data, cache);
+    }
+    return existing;
   }
 
   getChannel(data) {
@@ -35,8 +39,7 @@ class GenericAction {
         {
           id,
           guild_id: data.guild_id,
-          recipients: data.recipients ?? [data.author ?? data.user ?? { id: data.user_id }],
-          last_message_id: data.last_message_id,
+          recipients: [data.author ?? data.user ?? { id: data.user_id }],
         },
         this.client.channels,
         id,

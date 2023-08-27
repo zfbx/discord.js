@@ -86,12 +86,7 @@ class AutocompleteInteraction extends BaseInteraction {
     await this.client.rest.post(Routes.interactionCallback(this.id, this.token), {
       body: {
         type: InteractionResponseType.ApplicationCommandAutocompleteResult,
-        data: {
-          choices: options.map(({ nameLocalizations, ...option }) => ({
-            ...this.client.options.jsonTransformer(option),
-            name_localizations: nameLocalizations,
-          })),
-        },
+        data: { choices: this.client.options.jsonTransformer(options) },
       },
       auth: false,
     });

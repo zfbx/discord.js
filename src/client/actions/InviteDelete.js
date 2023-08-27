@@ -17,7 +17,8 @@ class InviteDeleteAction extends Action {
 
     /**
      * Emitted when an invite is deleted.
-     * <info>This event requires the {@link PermissionFlagsBits.ManageChannels} permission for the channel.</info>
+     * <info>This event requires either the {@link PermissionFlagsBits.ManageGuild} permission or the
+     * {@link PermissionFlagsBits.ManageChannels} permission for the channel.</info>
      * @event Client#inviteDelete
      * @param {Invite} invite The invite that was deleted
      */

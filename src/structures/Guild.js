@@ -5,7 +5,6 @@ const { makeURLSearchParams } = require('@discordjs/rest');
 const { ChannelType, GuildPremiumTier, Routes, GuildFeature } = require('discord-api-types/v10');
 const AnonymousGuild = require('./AnonymousGuild');
 const GuildAuditLogs = require('./GuildAuditLogs');
-const { GuildOnboarding } = require('./GuildOnboarding');
 const GuildPreview = require('./GuildPreview');
 const GuildTemplate = require('./GuildTemplate');
 const Integration = require('./Integration');
@@ -28,7 +27,7 @@ const VoiceStateManager = require('../managers/VoiceStateManager');
 const DataResolver = require('../util/DataResolver');
 const Status = require('../util/Status');
 const SystemChannelFlagsBitField = require('../util/SystemChannelFlagsBitField');
-const { discordSort, getSortableGroupTypes } = require('../util/Util');
+const { discordSort } = require('../util/Util');
 
 /**
  * Represents a guild (or a server) on Discord.
@@ -762,15 +761,6 @@ class Guild extends AnonymousGuild {
   }
 
   /**
-   * Fetches the guild onboarding data for this guild.
-   * @returns {Promise<GuildOnboarding>}
-   */
-  async fetchOnboarding() {
-    const data = await this.client.rest.get(Routes.guildOnboarding(this.id));
-    return new GuildOnboarding(this.client, data);
-  }
-
-  /**
    * The data for editing a guild.
    * @typedef {Object} GuildEditOptions
    * @property {string} [name] The name of the guild
@@ -1351,10 +1341,14 @@ class Guild extends AnonymousGuild {
    * @private
    */
   _sortedChannels(channel) {
-    const channelIsCategory = channel.type === ChannelType.GuildCategory;
-    const types = getSortableGroupTypes(channel.type);
+    const category = channel.type === ChannelType.GuildCategory;
+    const channelTypes = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
     return discordSort(
-      this.channels.cache.filter(c => types.includes(c.type) && (channelIsCategory || c.parentId === channel.parentId)),
+      this.channels.cache.filter(
+        c =>
+          (channelTypes.includes(channel.type) ? channelTypes.includes(c.type) : c.type === channel.type) &&
+          (category || c.parent === channel.parent),
+      ),
     );
   }
 }

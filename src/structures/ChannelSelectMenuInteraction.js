@@ -20,7 +20,7 @@ class ChannelSelectMenuInteraction extends MessageComponentInteraction {
 
     /**
      * Collection of the selected channels
-     * @type {Collection<Snowflake, BaseChannel|APIChannel>}
+     * @type {Collection<Snowflake, Channel|APIChannel>}
      */
     this.channels = new Collection();
 
